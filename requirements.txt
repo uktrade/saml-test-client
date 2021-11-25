@@ -3,3 +3,5 @@ djangosaml2==1.3.5
 dj-database-url
 django-environ
 psycopg2-binary
+whitenoise
+gunicorn

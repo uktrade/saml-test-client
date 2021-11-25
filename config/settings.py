@@ -21,6 +21,7 @@ env = environ.Env(
     XMLSEC1=(str, shutil.which("xmlsec1")),
 )
 
+BASE_URL = env("BASE_URL")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -122,6 +124,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "/static/"
 
 # Default primary key field type
@@ -167,7 +170,7 @@ SAML_CONFIG = {
   "xmlsec_binary": env("XMLSEC1"),
 
   # your entity id, usually your subdomain plus the url to the metadata view
-  "entityid": "http://localhost:8000/saml2/metadata/",
+  "entityid": f"{BASE_URL}/saml2/metadata/",
 
   # directory with attribute mapping
   "attribute_map_dir": os.path.join(SAML_CONFIG_DIR, "attribute_maps"),
@@ -190,16 +193,16 @@ SAML_CONFIG = {
               # url and binding to the assetion consumer service view
               # do not change the binding or service name
               "assertion_consumer_service": [
-                  ("http://localhost:8000/saml2/acs/",
+                  (f"{BASE_URL}/saml2/acs/",
                    saml2.BINDING_HTTP_POST),
                   ],
               # url and binding to the single logout service view
               # do not change the binding or service name
               "single_logout_service": [
                   # Disable next two lines for HTTP_REDIRECT for IDP"s that only support HTTP_POST. Ex. Okta:
-                  ("http://localhost:8000/saml2/ls/",
+                  (f"{BASE_URL}/saml2/ls/",
                    saml2.BINDING_HTTP_REDIRECT),
-                  ("http://localhost:8000/saml2/ls/post",
+                  (f"{BASE_URL}/saml2/ls/post",
                    saml2.BINDING_HTTP_POST),
                   ],
               },
@@ -212,17 +215,15 @@ SAML_CONFIG = {
           "force_authn": False,
 
            # Enable AllowCreate in NameIDPolicy.
-          "name_id_format_allow_create": False,
+          "name_id_format_allow_create": True,
 
            # attributes that this project need to identify a user
-          "required_attributes": ["givenName",
-                                  "sn",
-                                  "mail"],
+          "required_attributes": [],
 
            # attributes that may be useful to have but not required
           "optional_attributes": ["eduPersonAffiliation"],
 
-          "want_response_signed": True,
+          "want_response_signed": False,
           "authn_requests_signed": True,
           "logout_requests_signed": True,
           # Indicates that Authentication Responses to this SP must
@@ -230,7 +231,7 @@ SAML_CONFIG = {
           # any SAML Responses that are not signed.
           "want_assertions_signed": True,
 
-          "only_use_keys_in_metadata": True,
+          "only_use_keys_in_metadata": False,
 
           # When set to true, the SP will consume unsolicited SAML
           # Responses, i.e. SAML Responses for which it has not sent
@@ -244,24 +245,14 @@ SAML_CONFIG = {
               # only an IdP defined here. This IdP should be
               # present in our metadata
 
-              # the keys of this dictionary are entity ids
-              "https://localhost/simplesaml/saml2/idp/metadata.php": {
-                  "single_sign_on_service": {
-                      saml2.BINDING_HTTP_REDIRECT: "https://localhost/simplesaml/saml2/idp/SSOService.php",
-                      },
-                  "single_logout_service": {
-                      saml2.BINDING_HTTP_REDIRECT: "https://localhost/simplesaml/saml2/idp/SingleLogoutService.php",
-                      },
-                  },
-              },
           },
       },
-
+  },
   # where the remote metadata is stored, local, remote or mdq server.
   # One metadatastore or many ...
   "metadata": {
-      "remote": [{"url": "https://sso.trade.uat.uktrade.io/idp/metadata/"},],
-      },
+      "local": [os.path.join(SAML_CONFIG_DIR, 'metadata.xml')],
+  },
 
   # set to 1 to output debugging information
   "debug": 1,
