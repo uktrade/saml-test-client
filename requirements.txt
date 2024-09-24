@@ -1,4 +1,4 @@
-Django==4.2.8
+Django==4.2.16
 djangosaml2==1.9.1
 dj-database-url
 django-environ
